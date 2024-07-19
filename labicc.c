@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-//I.para armazenar a gray level dos bits da imagem, que variam de 0 a 255, o tipo mais econômico em C é o 'char', que varia entre [-128,+127]; mas como tem que converter isso, optei tipo int;
-//II.explicar pq 'log' nem sempre resolve o problema pras imagens;  FALAR Q USOU FLOAT
-//LEMBRAR: free;
+//I.para armazenar a gray level dos bits da imagem, que variam de 0 a 255, o tipo mais econômico
+//em C é o 'char', que varia entre [-128,+127]; mas como tem que converter isso, optei tipo int;
+//II.a operação log ilumina significativamente os pixels mais escuros, contrastando-os com os mais
+//claros. Se usada em imagens já bastante claras (i.e, bubbles2 ou sat_image) o processo gera 
+//pgm's muito claros, basicamente indecifráveis;
 
 typedef struct im{
   int x, y;
@@ -24,7 +26,6 @@ void ler_ASCII (imagem *img_input, char *arquivo){
   int i = 0;
   short unsigned int M=0, m=255;
   img_input->vetor_pixels = (int*) malloc ((tamanho+1)*sizeof(int));
-  //MOVER FTELL PRA ONDE TEM NUMERO!!
   while(i<4){
     aux = fgetc(temp);
     if (aux == '\n'){
@@ -48,7 +49,7 @@ void ler_ASCII (imagem *img_input, char *arquivo){
   fclose (temp);
 }
 
-void ler_BIN (imagem *img_input, char *arquivo){//CORRIGIR DPS PRA ESSE CASO;
+void ler_BIN (imagem *img_input, char *arquivo){
   FILE *temp;
   char aux;
   temp = fopen (arquivo, "rb");
@@ -67,7 +68,7 @@ void ler_BIN (imagem *img_input, char *arquivo){//CORRIGIR DPS PRA ESSE CASO;
     }
   }
   i = 0;
-  while (feof(temp) == 0){//o numero de caracteres está certo, porém está lendo gibberish??;
+  while (feof(temp) == 0){
     fread(&(img_input->vetor_pixels[i]),sizeof(__uint8_t),1,temp);//tinha q usar 1 byte!;
     if (img_input->vetor_pixels[i] > M){
       M = img_input->vetor_pixels[i];
@@ -110,7 +111,7 @@ void receber_imagem (imagem *img_input){
   }
   fscanf(input,"%d",&(img_input->x));
   fscanf(input,"%d",&(img_input->y));
-  aux = getw (input); //pra pular a linha;
+  aux = getw (input); 
   fclose (input);
   if ((img_input)->tipo == 50){
     ler_ASCII (img_input, entrada);
@@ -135,33 +136,37 @@ int vector_length (imagem *img_input){
 void aplicar_log (imagem *img_input, int tamanho){
   int pixel_maximo = img_input->pM;
   int i=0;
+  int M=0, m=255;
   float c = 255/log(1+pixel_maximo);
   while (i<tamanho){
     img_input->vetor_pixels[i] = c*log(img_input->vetor_pixels[i]+1);
+        if (img_input->vetor_pixels[i] > M){
+      M = img_input->vetor_pixels[i];
+    }
+    if (img_input->vetor_pixels[i] < m){
+      m = img_input->vetor_pixels[i];
+    }
     i++;
   }
+  img_input->pM = M;
+  img_input->pm = m;
 }
 
-void retornar_imagem (imagem *img_input, int tamanho){
+void retornar_imagem (imagem *img_input, int tamanho){//sempre devolve um ASCII;
   FILE *fp = NULL;
   fp = fopen("img_output.pgm", "w");
   if (fp == NULL){
     printf("Melou o arquivo!\n");
     exit(1);
   }
-  char t1[] = "P5";
-  char t11[] = "P2";
+  char t1[] = "P2";
   char t2[] = "# CREATOR: Image Generator SCC-222 – Lab ICC I";
-  if (img_input->tipo == 53){
-    fputs (t1, fp);
-  }else{
-    fputs (t11, fp);
-  }
+  fputs (t1, fp); 
   putc ('\n', fp);
   fputs (t2, fp);
   putc ('\n', fp);
   fprintf (fp, "%d %d\n", img_input->x, img_input->y);
-  printf("maior pixel: %d\n", img_input->pM);//leu 222?
+  printf("maior pixel: %d\n", img_input->pM); //tem que colocar o NOVO valor!!
   fprintf (fp, "%d\n", img_input->pM);
   int i = 0;
   char aux;
@@ -186,4 +191,4 @@ int main (void){
 //revisar: ponteiros e structs, free, inicializar tudo com NULL, arquivos (files em funções e tals), 
 //strings; Pq tava dando errado com a função devolver um ponteiro pra file??
 //checar tbm: GDB (comandos e extensao pro vscode) & makefile;
-//PARAR de ser bobo e aprender github comandos no terminal;
+//aprender github comandos no terminal;
