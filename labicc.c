@@ -11,10 +11,11 @@ typedef struct im{
   int x, y;
   int pM, pm;//pixel mais e menos significativo;
   int tipo;
-  int *vetor_pixels;
+  int *vetor_pixels;//armazenarei os pixels como vetores;
 }imagem; 
 
 void ler_ASCII (imagem *img_input, char *arquivo){
+//essa função lê arquivos dados como P2;    
   FILE *temp;
   char aux;
   temp = fopen (arquivo, "r");
@@ -50,6 +51,7 @@ void ler_ASCII (imagem *img_input, char *arquivo){
 }
 
 void ler_BIN (imagem *img_input, char *arquivo){
+//essa função lê arquivos dados como P5;    
   FILE *temp;
   char aux;
   temp = fopen (arquivo, "rb");
@@ -57,9 +59,9 @@ void ler_BIN (imagem *img_input, char *arquivo){
   printf("Erro em abrir o arquivo pra ler!\n");
   exit(1);
   }
+  short unsigned int M=0, m=255;
   int tamanho = (*img_input).x * (*img_input).y;
   int i = 0;
-  int M=0, m=255;
   img_input->vetor_pixels = (int*) malloc ((tamanho+1)*sizeof(int));
   while(i<4){
     aux = fgetc(temp);
@@ -85,6 +87,7 @@ void ler_BIN (imagem *img_input, char *arquivo){
 }
 
 void receber_imagem (imagem *img_input){
+//essa função recebe o texto do usuário e extrai o header, decidindo como ler os pixels com base no tipo de arquivo;    
   FILE *input;
   char aux;
   char *entrada;
@@ -123,6 +126,7 @@ void receber_imagem (imagem *img_input){
 }
 
 int vector_length (imagem *img_input){
+//calcula o tamanho do vetor de pixels;    
   int size;
   for (size=0; ;size++){
     if (img_input->vetor_pixels[size] == 500){ //demarca o fim;
@@ -134,13 +138,17 @@ int vector_length (imagem *img_input){
 }
 
 void aplicar_log (imagem *img_input, int tamanho){
+//permite a aplicação do log sobre as imagens;    
   int pixel_maximo = img_input->pM;
   int i=0;
   int M=0, m=255;
   float c = 255/log(1+pixel_maximo);
   while (i<tamanho){
     img_input->vetor_pixels[i] = c*log(img_input->vetor_pixels[i]+1);
-        if (img_input->vetor_pixels[i] > M){
+    if (img_input->vetor_pixels[i]>255){
+        img_input->vetor_pixels[i] = 255;//impede que os dados passem de 255;
+    }
+    if (img_input->vetor_pixels[i] > M){
       M = img_input->vetor_pixels[i];
     }
     if (img_input->vetor_pixels[i] < m){
@@ -152,7 +160,8 @@ void aplicar_log (imagem *img_input, int tamanho){
   img_input->pm = m;
 }
 
-void retornar_imagem (imagem *img_input, int tamanho){//sempre devolve um ASCII;
+void retornar_imagem (imagem *img_input, int tamanho){
+//sempre devolve um ASCII;
   FILE *fp = NULL;
   fp = fopen("img_output.pgm", "w");
   if (fp == NULL){
@@ -188,7 +197,6 @@ int main (void){
   free(img_input.vetor_pixels);
   return 0;
 }
-//revisar: ponteiros e structs, free, inicializar tudo com NULL, arquivos (files em funções e tals), 
-//strings; Pq tava dando errado com a função devolver um ponteiro pra file??
-//checar tbm: GDB (comandos e extensao pro vscode) & makefile;
-//aprender github comandos no terminal;
+//testei o código em minha máquina e ele clareou perfeitamente o 'station.pgm' e o 'fusca.pgm' (a placa é EN 0968),
+//falhando em melhorar a imagem somente nos outros dois arquivos. Acredito que isso seja devido à operação log, e não
+//ao código em si (como já esclareci no começo, ela não contrasta bem imagens bastante claras);
